@@ -1148,9 +1148,11 @@ static void asf_reset_header(AVFormatContext *s)
 
     for(i=0; i<s->nb_streams; i++){
         asf_st= s->streams[i]->priv_data;
-        av_free_packet(&asf_st->pkt);
-        asf_st->frag_offset=0;
-        asf_st->seq=0;
+        if (NULL != asf_st) {
+           av_free_packet(&asf_st->pkt);
+           asf_st->frag_offset=0;
+           asf_st->seq=0;
+        }
     }
     asf->asf_st= NULL;
 }
