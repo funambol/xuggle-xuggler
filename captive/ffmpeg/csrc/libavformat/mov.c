@@ -2815,7 +2815,7 @@ static AVIndexEntry *mov_find_next_sample(AVFormatContext *s, AVStream **st)
     for (i = 0; i < s->nb_streams; i++) {
         AVStream *avst = s->streams[i];
         MOVStreamContext *msc = avst->priv_data;
-        if (msc->pb && msc->current_sample < avst->nb_index_entries) {
+        if (msc && msc->pb && msc->current_sample < avst->nb_index_entries) {
             AVIndexEntry *current_sample = &avst->index_entries[msc->current_sample];
             int64_t dts = av_rescale(current_sample->timestamp, AV_TIME_BASE, msc->time_scale);
             av_dlog(s, "stream %d, sample %d, dts %"PRId64"\n", i, msc->current_sample, dts);
@@ -2988,15 +2988,16 @@ static int mov_read_close(AVFormatContext *s)
     for (i = 0; i < s->nb_streams; i++) {
         AVStream *st = s->streams[i];
         MOVStreamContext *sc = st->priv_data;
-
-        av_freep(&sc->ctts_data);
-        for (j = 0; j < sc->drefs_count; j++) {
-            av_freep(&sc->drefs[j].path);
-            av_freep(&sc->drefs[j].dir);
+        if (sc) {
+            av_freep(&sc->ctts_data);
+            for (j = 0; j < sc->drefs_count; j++) {
+                av_freep(&sc->drefs[j].path);
+                av_freep(&sc->drefs[j].dir);
+            }
+            av_freep(&sc->drefs);
+            if (sc->pb && sc->pb != s->pb)
+                avio_close(sc->pb);
         }
-        av_freep(&sc->drefs);
-        if (sc->pb && sc->pb != s->pb)
-            avio_close(sc->pb);
     }
 
     if (mov->dv_demux) {
